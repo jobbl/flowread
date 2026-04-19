@@ -5,10 +5,12 @@
 FlowRead AI is an accessibility and educational tool that dynamically bolds the most semantically important words in a text. It uses the raw, internal attention vectors of the **Google Gemma 2B** model to understand what words actually matter, creating a visually guided reading path that reduces cognitive load and improves reading comprehension.
 
 ## The Problem
-In the digital age, information overload is a massive barrier. For individuals with ADHD, dyslexia, or cognitive fatigue, reading dense blocks of text is exhausting and hinders learning. Existing solutions (like "Bionic Reading") simply bold the first half of *every* word, which is arbitrary and ignores the actual meaning of the sentence. 
+In the digital age, information overload is a massive barrier. General readers experience reduced reading speeds and poor retention when trying to skim long articles or academic papers, and individuals with ADHD, dyslexia, or cognitive fatigue face even more significant challenges when processing dense blocks of text. Existing solutions (like "Bionic Reading") simply bold the first half of *every* word, which is arbitrary and ignores the actual meaning of the sentence. 
 
 ## The Solution
-FlowRead AI solves this by extracting the mathematical "saliency" of words. By averaging the incoming attention scores across the middle layers of Gemma 2B, we determine exactly which nouns, verbs, and adjectives anchor the semantic meaning of the sentence. 
+FlowRead AI solves this by extracting the mathematical "saliency" of words. By averaging the incoming attention scores across different layers of Gemma 2B, we determine exactly which nouns, verbs, and adjectives anchor the semantic meaning of the sentence. 
+
+For the general reader, this translates to significantly faster reading speeds and highly efficient skimming, as the eye is naturally drawn to the most information-dense words. For readers with attention deficits or cognitive fatigue, it creates a visually guided reading path that reduces cognitive load and improves reading comprehension. Everyone benefits from a more focused reading experience.
 
 **Key Features:**
 * **True Semantic Saliency:** Real mathematical LLM attention extraction, ensuring only truly important words are emphasized.
