@@ -258,9 +258,10 @@
                     <label for="threshold" title="Lower threshold highlights more words">Threshold: <span id="threshold-val">0.35</span></label>
                     <input type="range" id="threshold" min="0" max="1" step="0.01" value="0.35">
                 </div>
-                <div class="slider-group">
-                    <label for="gradient-mode" style="cursor:pointer;" title="Maps attention scores to visual contrast dynamically">
-                        <input type="checkbox" id="gradient-mode"> Gradient Mode
+                <div class="slider-group" style="display: flex; align-items: center; justify-content: flex-start; gap: 0.5rem;">
+                    <input type="checkbox" id="gradient-mode" style="margin: 0;">
+                    <label for="gradient-mode" style="cursor:pointer; margin: 0; white-space: nowrap;" title="Maps attention scores to visual contrast dynamically">
+                        Gradient Mode
                     </label>
                 </div>
             </div>
@@ -315,6 +316,17 @@
             <button id="submit-answers-btn">Submit Answers</button>
         </div>
 
+        <!-- Step 3.5: Preference -->
+        <div id="study-preference" class="container" style="display: none; text-align: center;">
+            <h2>Which text style did you prefer?</h2>
+            <p style="color: #6b7280; margin-bottom: 2rem;">Please select the reading experience you liked the most.</p>
+            <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 400px; margin: 0 auto 2rem;">
+                <button class="pref-btn" data-pref="plain" style="padding: 1rem; font-size: 1.1rem; background: #fffcf8; color: #292524; border: 1px solid #e7e5df;">Plain Text</button>
+                <button class="pref-btn" data-pref="flowread" style="padding: 1rem; font-size: 1.1rem; background: #f5f3ef; color: #292524; border: 1px solid #a8a29e;">FlowRead (bolding)</button>
+                <button class="pref-btn" data-pref="gradient" style="padding: 1rem; font-size: 1.1rem; background: #eef2ff; color: #1e3a8a; border: 1px solid #c7d2fe;">FlowRead (gradient)</button>
+            </div>
+        </div>
+
         <!-- Step 4: Results Dashboard -->
         <div id="study-results" class="container" style="display: none; text-align: center;">
             <h2>Global Study Results</h2>
@@ -331,13 +343,27 @@
                 </div>
                 <!-- FlowRead Stats -->
                 <div style="background: #f5f3ef; padding: 1.5rem; border-radius: 0.5rem; width: 250px; border: 2px solid #a8a29e;">
-                    <h3 style="margin-top: 0; color: #292524;">FlowRead Text</h3>
+                    <h3 style="margin-top: 0; color: #292524;">FlowRead (bolding)</h3>
                     <p style="font-size: 2rem; font-weight: bold; margin: 0.5rem 0; color: #292524;" id="stat-flow-time">-- s</p>
                     <p style="margin: 0; color: #57534e;">Average Reading Time</p>
                     <p style="font-size: 1.5rem; font-weight: bold; margin: 1rem 0 0.5rem; color: #292524;" id="stat-flow-acc">--%</p>
                     <p style="margin: 0; color: #57534e;">Comprehension Accuracy</p>
                 </div>
+                <!-- Gradient Stats -->
+                <div style="background: #eef2ff; padding: 1.5rem; border-radius: 0.5rem; width: 250px; border: 2px solid #a5b4fc;">
+                    <h3 style="margin-top: 0; color: #1e3a8a;">FlowRead (gradient)</h3>
+                    <p style="font-size: 2rem; font-weight: bold; margin: 0.5rem 0; color: #1e3a8a;" id="stat-grad-time">-- s</p>
+                    <p style="margin: 0; color: #3730a3;">Average Reading Time</p>
+                    <p style="font-size: 1.5rem; font-weight: bold; margin: 1rem 0 0.5rem; color: #1e3a8a;" id="stat-grad-acc">--%</p>
+                    <p style="margin: 0; color: #3730a3;">Comprehension Accuracy</p>
+                </div>
             </div>
+            
+            <div style="margin-bottom: 2rem;">
+                <h3 style="color: #4b5563;">User Preferences</h3>
+                <p>Plain: <span id="pref-plain">0</span> | FlowRead (bolding): <span id="pref-flowread">0</span> | FlowRead (gradient): <span id="pref-gradient">0</span></p>
+            </div>
+
             <p style="font-size: 0.9rem; color: #6b7280;">Based on <span id="stat-sample-size">0</span> total reading sessions.</p>
             <button onclick="switchTab('sandbox')" style="margin-top: 1rem;">Try FlowRead on your own text</button>
         </div>
@@ -523,7 +549,17 @@
         let conditionOrder = []; 
         let readingStartTime = 0;
         let flowReadHTMLs = {}; 
+        let flowReadGradientHTMLs = {};
         let currentReadingTimeMs = 0;
+
+        // Helper to shuffle array
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
 
         document.getElementById('start-study-btn').addEventListener('click', async () => {
             currentStep = 0;
@@ -536,12 +572,15 @@
                 const data = await res.json();
                 studyTexts = data.texts;
 
-                // 2. Randomize condition order for A/B testing
-                conditionOrder = Math.random() > 0.5 ? ['plain', 'flowread'] : ['flowread', 'plain'];
+                // 2. Randomize condition order for A/B/C testing
+                conditionOrder = shuffle(['plain', 'flowread', 'gradient']);
 
-                // 3. Since the HTML is pre-calculated by the backend, just load it into our dict
+                // 3. Load HTMLs into dicts
                 const flowReadTextIndex = conditionOrder.indexOf('flowread');
                 flowReadHTMLs[studyTexts[flowReadTextIndex].id] = studyTexts[flowReadTextIndex].flowread_html;
+                
+                const gradientTextIndex = conditionOrder.indexOf('gradient');
+                flowReadGradientHTMLs[studyTexts[gradientTextIndex].id] = studyTexts[gradientTextIndex].flowread_gradient_html;
 
                 // 4. Start the first reading task
                 document.getElementById('study-loading').style.display = 'none';
@@ -559,12 +598,18 @@
             const currentData = studyTexts[currentStep];
             const currentCondition = conditionOrder[currentStep];
 
-            document.getElementById('study-topic').textContent = currentData.topic + (currentCondition === 'flowread' ? ' (FlowRead Enhanced)' : '');
-            document.getElementById('study-progress').textContent = `Text ${currentStep + 1} of 2`;
+            let topicText = currentData.topic;
+            if (currentCondition === 'flowread') topicText += ' (FlowRead bolding)';
+            if (currentCondition === 'gradient') topicText += ' (FlowRead gradient)';
+            
+            document.getElementById('study-topic').textContent = topicText;
+            document.getElementById('study-progress').textContent = `Text ${currentStep + 1} of 3`;
 
             const contentDiv = document.getElementById('study-text-content');
             if (currentCondition === 'flowread') {
                 contentDiv.innerHTML = flowReadHTMLs[currentData.id];
+            } else if (currentCondition === 'gradient') {
+                contentDiv.innerHTML = flowReadGradientHTMLs[currentData.id];
             } else {
                 contentDiv.textContent = currentData.text;
             }
@@ -655,13 +700,40 @@
             document.getElementById('submit-answers-btn').textContent = "Submit Answers";
 
             currentStep++;
-            if (currentStep < 2) {
+            if (currentStep < 3) {
                 // Next text
                 showReadingScreen();
             } else {
-                // Done! Show stats
-                showResultsScreen();
+                // Done! Show preference questionnaire
+                document.getElementById('study-preference').style.display = 'block';
             }
+        });
+
+        // Handle preference selection
+        document.querySelectorAll('.pref-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const preference = e.target.getAttribute('data-pref');
+                
+                // Disable buttons
+                document.querySelectorAll('.pref-btn').forEach(b => b.disabled = true);
+                e.target.textContent = "Submitting...";
+
+                try {
+                    await fetch('/api/study/preference', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            user_id: userId,
+                            preference: preference
+                        })
+                    });
+                } catch (err) {
+                    console.error("Failed to submit preference:", err);
+                }
+
+                document.getElementById('study-preference').style.display = 'none';
+                showResultsScreen();
+            });
         });
 
         async function showResultsScreen() {
@@ -680,8 +752,16 @@
                 
                 document.getElementById('stat-flow-time').textContent = formatTime(stats.flowread.avg_reading_time_ms);
                 document.getElementById('stat-flow-acc').textContent = formatAcc(stats.flowread.avg_accuracy_percent);
+                
+                document.getElementById('stat-grad-time').textContent = formatTime(stats.gradient.avg_reading_time_ms);
+                document.getElementById('stat-grad-acc').textContent = formatAcc(stats.gradient.avg_accuracy_percent);
 
-                document.getElementById('stat-sample-size').textContent = stats.plain.sample_size + stats.flowread.sample_size;
+                document.getElementById('pref-plain').textContent = stats.preferences.plain || 0;
+                document.getElementById('pref-flowread').textContent = stats.preferences.flowread || 0;
+                document.getElementById('pref-gradient').textContent = stats.preferences.gradient || 0;
+
+                const totalSessions = (stats.plain.sample_size || 0) + (stats.flowread.sample_size || 0) + (stats.gradient.sample_size || 0);
+                document.getElementById('stat-sample-size').textContent = totalSessions;
 
                 document.getElementById('study-loading').style.display = 'none';
                 document.getElementById('study-results').style.display = 'block';
