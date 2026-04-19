@@ -18,8 +18,13 @@ for text in texts:
         if i == 0 and ("<bos>" in item["token"] or "<bos>" in item["word"]):
             continue
         
-        if item["token"].startswith(" ") and len(current_word) > 0:
-            words.append({"tokens": current_word, "max_score": current_max})
+        token_str = item["token"]
+        is_whitespace = (token_str.strip() == '')
+        prev_is_whitespace = (current_word[-1]["token"].strip() == '') if len(current_word) > 0 else False
+        
+        if token_str.startswith(" ") or (len(current_word) > 0 and is_whitespace != prev_is_whitespace):
+            if len(current_word) > 0:
+                words.append({"tokens": current_word, "max_score": current_max})
             current_word = [item]
             current_max = item["score"]
         else:

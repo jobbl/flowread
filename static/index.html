@@ -471,9 +471,13 @@
             currentTokens.forEach((item, index) => {
                 if (index === 0 && (item.token.includes('<bos>') || item.word.includes('<bos>'))) return;
 
-                // A space at the start of a token usually indicates a new word in Gemma
-                if (item.token.startsWith(' ') && currentWordTokens.length > 0) {
-                    words.push({ tokens: currentWordTokens, maxScore: currentWordMaxScore });
+                const isWhitespace = item.token.trim() === '';
+                const prevIsWhitespace = currentWordTokens.length > 0 && currentWordTokens[currentWordTokens.length - 1].token.trim() === '';
+
+                if (item.token.startsWith(' ') || (currentWordTokens.length > 0 && isWhitespace !== prevIsWhitespace)) {
+                    if (currentWordTokens.length > 0) {
+                        words.push({ tokens: currentWordTokens, maxScore: currentWordMaxScore });
+                    }
                     currentWordTokens = [item];
                     currentWordMaxScore = item.score;
                 } else {
