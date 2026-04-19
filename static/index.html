@@ -509,11 +509,6 @@
                 });
             });
         }
-                
-                span.textContent = item.token;
-                resultContainer.appendChild(span);
-            });
-        }
 
         // ==========================================
         // USER STUDY LOGIC
@@ -527,6 +522,7 @@
         let currentReadingTimeMs = 0;
 
         document.getElementById('start-study-btn').addEventListener('click', async () => {
+            currentStep = 0;
             document.getElementById('study-intro').style.display = 'none';
             document.getElementById('study-loading').style.display = 'block';
 
