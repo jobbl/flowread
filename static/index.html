@@ -463,23 +463,52 @@
             const useGradient = gradientMode.checked;
             resultContainer.innerHTML = ''; 
 
+            // Group tokens into words based on the SentencePiece space prefix
+            let words = [];
+            let currentWordTokens = [];
+            let currentWordMaxScore = 0;
+
             currentTokens.forEach((item, index) => {
                 if (index === 0 && (item.token.includes('<bos>') || item.word.includes('<bos>'))) return;
 
-                const span = document.createElement('span');
-                span.className = 'token';
-                
-                if (useGradient) {
-                    // Map score (0-1) to opacity (0.4-1.0) and font-weight (400-800)
-                    const opacity = 0.4 + (item.score * 0.6);
-                    const weight = 400 + Math.round(item.score * 400);
-                    span.style.opacity = opacity;
-                    span.style.fontWeight = weight;
+                // A space at the start of a token usually indicates a new word in Gemma
+                if (item.token.startsWith(' ') && currentWordTokens.length > 0) {
+                    words.push({ tokens: currentWordTokens, maxScore: currentWordMaxScore });
+                    currentWordTokens = [item];
+                    currentWordMaxScore = item.score;
                 } else {
-                    // Binary threshold mode
-                    span.style = ''; // reset inline styles
-                    if (item.score >= threshold) span.classList.add('highlighted');
+                    currentWordTokens.push(item);
+                    currentWordMaxScore = Math.max(currentWordMaxScore, item.score);
                 }
+            });
+            if (currentWordTokens.length > 0) {
+                words.push({ tokens: currentWordTokens, maxScore: currentWordMaxScore });
+            }
+
+            // Render words
+            words.forEach(wordObj => {
+                const isWordHighlighted = wordObj.maxScore >= threshold;
+
+                wordObj.tokens.forEach(item => {
+                    const span = document.createElement('span');
+                    span.className = 'token';
+                    
+                    if (useGradient) {
+                        // In gradient mode, we still render token-by-token detail
+                        const opacity = 0.4 + (item.score * 0.6);
+                        const weight = 400 + Math.round(item.score * 400);
+                        span.style.opacity = opacity;
+                        span.style.fontWeight = weight;
+                    } else {
+                        // Binary mode: entire word gets highlighted if ANY part of it crossed threshold
+                        if (isWordHighlighted) span.classList.add('highlighted');
+                    }
+                    
+                    span.textContent = item.token;
+                    resultContainer.appendChild(span);
+                });
+            });
+        }
                 
                 span.textContent = item.token;
                 resultContainer.appendChild(span);
