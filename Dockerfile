@@ -15,8 +15,8 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application
-COPY . .
+# Copy the rest of the application and set ownership to the non-root user
+COPY --chown=user:user . .
 
 # Hugging Face Spaces require running as a non-root user (UID 1000)
 RUN useradd -m -u 1000 user
