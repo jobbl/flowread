@@ -3,42 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Text Saliency Pro</title>
+    <title>FlowRead AI | Saliency-Guided Reading</title>
     <style>
         body {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            max-width: 800px;
+            font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif; /* More paper/academic feel */
+            max-width: 900px;
             margin: 0 auto;
             padding: 2rem;
-            line-height: 1.5;
-            background-color: #f9fafb;
-            color: #111827;
+            line-height: 1.6;
+            background-color: #fdfbf7; /* Slightly beige paper background */
+            color: #292524;
         }
 
         h1 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
+            font-size: 2.8rem;
+            margin-bottom: 0.5rem;
             text-align: center;
+            font-weight: 800;
+            background: linear-gradient(to right, #1c1917 0%, #1c1917 40%, #a8a29e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
         }
 
-        p.description {
+        p.subtitle {
             text-align: center;
-            color: #4b5563;
+            color: #57534e;
+            font-size: 1.1rem;
             margin-bottom: 2rem;
         }
 
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .tab-btn {
+            background-color: #e7e5df;
+            color: #44403c;
+            border: 1px solid #d6d3d1;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            border-radius: 999px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .tab-btn.active {
+            background-color: #292524;
+            color: #fdfbf7;
+            border-color: #292524;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .container {
-            background: white;
+            background: #fffcf8;
             padding: 2rem;
             border-radius: 0.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e7e5df;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+
+        textarea, input[type="text"] {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #fffcf8;
+            border: 1px solid #d6d3d1;
+            color: #292524;
         }
 
         textarea {
             width: 100%;
             height: 150px;
             padding: 0.75rem;
-            border: 1px solid #d1d5db;
             border-radius: 0.375rem;
             font-size: 1rem;
             resize: vertical;
@@ -65,36 +120,69 @@
         input[type="range"] {
             flex-grow: 1;
             max-width: 300px;
+            accent-color: #57534e;
         }
 
         button {
-            background-color: #3b82f6;
-            color: white;
+            background-color: #292524;
+            color: #fdfbf7;
             border: none;
             padding: 0.5rem 1.5rem;
             font-size: 1rem;
             border-radius: 0.375rem;
             cursor: pointer;
             transition: background-color 0.2s;
+            font-family: inherit;
         }
 
         button:hover {
-            background-color: #2563eb;
+            background-color: #44403c;
         }
 
         button:disabled {
-            background-color: #9ca3af;
+            background-color: #a8a29e;
             cursor: not-allowed;
         }
 
         #result-container {
             margin-top: 2rem;
             padding: 1.5rem;
-            background-color: #f3f4f6;
+            background-color: #f5f3ef;
+            border: 1px solid #e7e5df;
             border-radius: 0.375rem;
             min-height: 100px;
             white-space: pre-wrap;
             font-size: 1.125rem;
+        }
+
+        /* Round Checkboxes */
+        input[type="checkbox"] {
+            appearance: none;
+            background-color: #fffcf8;
+            margin: 0;
+            font: inherit;
+            color: currentColor;
+            width: 1.15em;
+            height: 1.15em;
+            border: 1px solid #a8a29e;
+            border-radius: 50%;
+            display: grid;
+            place-content: center;
+            cursor: pointer;
+        }
+        
+        input[type="checkbox"]::before {
+            content: "";
+            width: 0.65em;
+            height: 0.65em;
+            border-radius: 50%;
+            transform: scale(0);
+            transition: 120ms transform ease-in-out;
+            box-shadow: inset 1em 1em #292524;
+        }
+        
+        input[type="checkbox"]:checked::before {
+            transform: scale(1);
         }
 
         /* Token specific styles */
@@ -107,121 +195,493 @@
             color: #000;
         }
         
+        .semi-highlighted {
+            font-weight: 600;
+            color: #44403c;
+        }
+
         #loading {
             display: none;
-            color: #6b7280;
+            color: #78716c;
             text-align: center;
             margin-top: 1rem;
+            font-style: italic;
         }
     </style>
 </head>
 <body>
 
-    <h1>Text Saliency Pro</h1>
-    <p class="description">Improve reading comprehension using LLM attention vectors.<br>Words with attention above the threshold will be bolded.</p>
+    <h1>FlowRead</h1>
+    <p class="subtitle">Accelerate reading comprehension using LLM attention vectors.</p>
 
-    <div class="container">
-        <textarea id="text-input" placeholder="Enter or paste your text here...">In this project I want to use the attention vectors of a llm to bold the most important words in an input text to improve reading comprehension.</textarea>
-        
-        <div class="controls">
-            <button id="analyze-btn">Analyze Text</button>
-            <div class="slider-group">
-                <label for="threshold">Attention Threshold: <span id="threshold-val">0.50</span></label>
-                <input type="range" id="threshold" min="0" max="1" step="0.01" value="0.5">
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('study')">Take the User Study</button>
+        <button class="tab-btn" onclick="switchTab('sandbox')">Playground (Sandbox)</button>
+    </div>
+
+    <!-- Playground Tab -->
+    <div id="sandbox-tab" class="tab-content">
+        <div class="container">
+            <textarea id="text-input" placeholder="Enter or paste your text here...">In the year 1969, Apollo 11 launched a massive rocket into space, filled with brilliant astronauts and powerful technology. It was a terrifying, yet awe-inspiring journey that changed history forever.</textarea>
+            
+            <details style="margin-bottom: 1.5rem; border: 1px solid #d6d3d1; border-radius: 0.375rem; padding: 1rem; background: #fdfbf7;">
+                <summary style="cursor: pointer; font-weight: bold; color: #57534e;">Advanced Saliency Settings</summary>
+                
+                <div style="margin-top: 1rem;">
+                    <label for="preprompt" style="display:block; font-weight: 600; margin-bottom: 0.5rem; color: #44403c;">
+                        Intent-Driven Reading (Preprompt)
+                    </label>
+                    <p style="font-size: 0.85rem; color: #78716c; margin-top: 0; margin-bottom: 0.5rem;">
+                        Instruct Gemma what to focus on. Examples: "Focus on numbers and dates", "Highlight emotional words".
+                    </p>
+                    <input type="text" id="preprompt" placeholder="e.g., Focus only on verbs and action words..." style="width: 100%; padding: 0.5rem; border: 1px solid #d6d3d1; border-radius: 0.25rem; font-size: 0.9rem; box-sizing: border-box; margin-bottom: 1rem; font-family: inherit;">
+                </div>
+
+                <div>
+                    <label style="display:block; font-weight: 600; margin-bottom: 0.5rem; color: #44403c;">
+                        Network Layers (Gemma 2B: 18 Layers)
+                    </label>
+                    <p style="font-size: 0.85rem; color: #78716c; margin-top: 0; margin-bottom: 0.5rem;">
+                        Select which layers to average attention scores from. Middle layers generally capture the best semantic meaning.
+                    </p>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
+                        <button class="layer-preset" onclick="setLayerPreset('middle')" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; background: #e7e5df; color: #44403c; border-radius: 0.25rem;">Middle Layers</button>
+                        <button class="layer-preset" onclick="setLayerPreset('all')" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; background: #e7e5df; color: #44403c; border-radius: 0.25rem;">All Layers</button>
+                        <button class="layer-preset" onclick="setLayerPreset('first')" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; background: #e7e5df; color: #44403c; border-radius: 0.25rem;">First Layer</button>
+                        <button class="layer-preset" onclick="setLayerPreset('last')" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; background: #e7e5df; color: #44403c; border-radius: 0.25rem;">Last Layer</button>
+                    </div>
+                    <div id="layer-checkboxes" style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+                        <!-- Checkboxes generated by JS -->
+                    </div>
+                </div>
+            </details>
+
+            <div class="controls">
+                <button id="analyze-btn">Analyze Text</button>
+                <div class="slider-group">
+                    <label for="threshold" title="Lower threshold highlights more words">Threshold: <span id="threshold-val">0.35</span></label>
+                    <input type="range" id="threshold" min="0" max="1" step="0.01" value="0.35">
+                </div>
+                <div class="slider-group">
+                    <label for="gradient-mode" style="cursor:pointer;" title="Maps attention scores to visual contrast dynamically">
+                        <input type="checkbox" id="gradient-mode"> Gradient Mode
+                    </label>
+                </div>
+            </div>
+            
+            <div id="loading">Analyzing attention vectors with Gemma 2B... Please wait.</div>
+
+            <div id="result-container">
+                <!-- Processed text will appear here -->
             </div>
         </div>
-        
-        <div id="loading">Analyzing attention vectors with Gemma 2B... Please wait.</div>
+    </div>
 
-        <div id="result-container">
-            <!-- Processed text will appear here -->
+    <!-- Study Tab -->
+    <div id="study-tab" class="tab-content active">
+        <!-- Step 1: Intro -->
+        <div id="study-intro" class="container" style="text-align: center;">
+            <h2>Help us prove FlowRead works!</h2>
+            <p style="max-width: 600px; margin: 0 auto 2rem; color: #4b5563;">
+                We are testing if LLM-guided saliency highlighting improves reading speed, comprehension, and retention. 
+                You will be shown two short texts (one plain, one FlowRead-enhanced) and asked a few quick questions.
+            </p>
+            <button id="start-study-btn" style="font-size: 1.25rem; padding: 1rem 2rem;">Start the 2-Minute Study</button>
+        </div>
+
+        <!-- Step 1.5: Loading -->
+        <div id="study-loading" class="container" style="display: none; text-align: center;">
+            <h2 id="study-loading-title">Preparing your study...</h2>
+            <p>Our AI is analyzing the texts. This takes just a moment.</p>
+        </div>
+
+        <!-- Step 2: Reading -->
+        <div id="study-reading" class="container" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 id="study-topic" style="margin: 0; color: #1f2937;">Topic</h2>
+                <span id="study-progress" style="color: #6b7280; font-weight: bold; background: #e5e7eb; padding: 0.25rem 0.75rem; border-radius: 999px;">Text 1 of 2</span>
+            </div>
+            <div id="study-text-content" style="font-size: 1.25rem; line-height: 1.8; margin-bottom: 2rem; padding: 1.5rem; background: #fdfbf7; border: 1px solid #d6d3d1; border-radius: 0.5rem; min-height: 150px;">
+                <!-- Text goes here -->
+            </div>
+            <div style="text-align: center;">
+                <button id="done-reading-btn" style="font-size: 1.1rem; padding: 0.75rem 2rem;">I'm Done Reading</button>
+            </div>
+        </div>
+
+        <!-- Step 3: Questions -->
+        <div id="study-questions" class="container" style="display: none;">
+            <h2>Comprehension Check</h2>
+            <p style="color: #6b7280; margin-bottom: 1.5rem;">Please answer based on the text you just read. (You cannot go back!)</p>
+            <div id="questions-container" style="margin-bottom: 2rem;">
+                <!-- Questions go here -->
+            </div>
+            <button id="submit-answers-btn">Submit Answers</button>
+        </div>
+
+        <!-- Step 4: Results Dashboard -->
+        <div id="study-results" class="container" style="display: none; text-align: center;">
+            <h2>Global Study Results</h2>
+            <p style="color: #4b5563; margin-bottom: 2rem;">Thank you! Here is how FlowRead impacts reading across all users.</p>
+            
+            <div style="display: flex; justify-content: center; gap: 2rem; margin-bottom: 2rem; flex-wrap: wrap;">
+                <!-- Plain Stats -->
+                <div style="background: #fffcf8; padding: 1.5rem; border-radius: 0.5rem; width: 250px; border: 1px solid #e7e5df;">
+                    <h3 style="margin-top: 0; color: #292524;">Plain Text</h3>
+                    <p style="font-size: 2rem; font-weight: bold; margin: 0.5rem 0;" id="stat-plain-time">-- s</p>
+                    <p style="margin: 0; color: #57534e;">Average Reading Time</p>
+                    <p style="font-size: 1.5rem; font-weight: bold; margin: 1rem 0 0.5rem;" id="stat-plain-acc">--%</p>
+                    <p style="margin: 0; color: #57534e;">Comprehension Accuracy</p>
+                </div>
+                <!-- FlowRead Stats -->
+                <div style="background: #f5f3ef; padding: 1.5rem; border-radius: 0.5rem; width: 250px; border: 2px solid #a8a29e;">
+                    <h3 style="margin-top: 0; color: #292524;">FlowRead Text</h3>
+                    <p style="font-size: 2rem; font-weight: bold; margin: 0.5rem 0; color: #292524;" id="stat-flow-time">-- s</p>
+                    <p style="margin: 0; color: #57534e;">Average Reading Time</p>
+                    <p style="font-size: 1.5rem; font-weight: bold; margin: 1rem 0 0.5rem; color: #292524;" id="stat-flow-acc">--%</p>
+                    <p style="margin: 0; color: #57534e;">Comprehension Accuracy</p>
+                </div>
+            </div>
+            <p style="font-size: 0.9rem; color: #6b7280;">Based on <span id="stat-sample-size">0</span> total reading sessions.</p>
+            <button onclick="switchTab('sandbox')" style="margin-top: 1rem;">Try FlowRead on your own text</button>
         </div>
     </div>
 
     <script>
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            if (tabName === 'study') {
+                document.getElementById('study-tab').classList.add('active');
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+            } else {
+                document.getElementById('sandbox-tab').classList.add('active');
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            }
+        }
+
+        // ==========================================
+        // PLAYGROUND LOGIC
+        // ==========================================
         const inputArea = document.getElementById('text-input');
+        const prepromptInput = document.getElementById('preprompt');
         const analyzeBtn = document.getElementById('analyze-btn');
         const thresholdSlider = document.getElementById('threshold');
         const thresholdVal = document.getElementById('threshold-val');
+        const gradientMode = document.getElementById('gradient-mode');
         const resultContainer = document.getElementById('result-container');
         const loading = document.getElementById('loading');
 
-        let currentTokens = []; // Array of {token: str, word: str, score: float}
+        let currentTokens = []; 
 
-        // Update threshold display
+        // Generate Layer Checkboxes
+        const layerContainer = document.getElementById('layer-checkboxes');
+        for(let i = 0; i < 18; i++) {
+            const label = document.createElement('label');
+            label.style.display = 'flex';
+            label.style.alignItems = 'center';
+            label.style.gap = '0.25rem';
+            label.style.fontSize = '0.85rem';
+            label.style.cursor = 'pointer';
+            
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.value = i;
+            cb.className = 'layer-cb';
+            
+            label.appendChild(cb);
+            label.appendChild(document.createTextNode(`L${i}`));
+            layerContainer.appendChild(label);
+        }
+
+        // Presets Logic
+        window.setLayerPreset = function(preset) {
+            const checkboxes = document.querySelectorAll('.layer-cb');
+            checkboxes.forEach(cb => cb.checked = false);
+            
+            if(preset === 'all') {
+                checkboxes.forEach(cb => cb.checked = true);
+            } else if (preset === 'first') {
+                checkboxes[0].checked = true;
+            } else if (preset === 'last') {
+                checkboxes[17].checked = true;
+            } else if (preset === 'middle') {
+                // Middle 50% for 18 layers is ~4 through 13
+                for(let i = 4; i <= 13; i++) {
+                    checkboxes[i].checked = true;
+                }
+            }
+        };
+        // Set middle as default
+        setLayerPreset('middle');
+
         thresholdSlider.addEventListener('input', (e) => {
             thresholdVal.textContent = parseFloat(e.target.value).toFixed(2);
-            renderTokens(); // Re-render instantly when slider changes
+            renderTokens(); 
         });
 
-        // Analyze text when button is clicked
+        gradientMode.addEventListener('change', renderTokens);
+
         analyzeBtn.addEventListener('click', async () => {
             const text = inputArea.value.trim();
+            const preprompt = prepromptInput.value.trim();
+            
+            const checkedLayers = Array.from(document.querySelectorAll('.layer-cb:checked')).map(cb => parseInt(cb.value));
+            
             if (!text) return;
+            if (checkedLayers.length === 0) {
+                alert("Please select at least one layer!");
+                return;
+            }
 
-            // Update UI state
             analyzeBtn.disabled = true;
             loading.style.display = 'block';
             resultContainer.innerHTML = '';
 
             try {
-                // Call the FastAPI backend
                 const response = await fetch('/analyze', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ text })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, preprompt, layers: checkedLayers })
                 });
 
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
+                if (!response.ok) throw new Error('Network response was not ok');
 
                 const data = await response.json();
                 currentTokens = data.words || [];
                 renderTokens();
 
             } catch (error) {
-                console.error('Error analyzing text:', error);
+                console.error('Error:', error);
                 resultContainer.innerHTML = '<span style="color: red;">Error analyzing text. Is the backend running?</span>';
             } finally {
-                // Restore UI state
                 analyzeBtn.disabled = false;
                 loading.style.display = 'none';
             }
         });
 
-        // Render the tokens based on the current threshold
         function renderTokens() {
             if (!currentTokens.length) return;
-
             const threshold = parseFloat(thresholdSlider.value);
-            resultContainer.innerHTML = ''; // Clear existing
+            const useGradient = gradientMode.checked;
+            resultContainer.innerHTML = ''; 
 
             currentTokens.forEach((item, index) => {
-                // Skip the <bos> token (usually first)
-                if (index === 0 && (item.token.includes('<bos>') || item.word.includes('<bos>'))) {
-                    return;
-                }
+                if (index === 0 && (item.token.includes('<bos>') || item.word.includes('<bos>'))) return;
 
                 const span = document.createElement('span');
                 span.className = 'token';
                 
-                // Add bolding if score is above threshold
-                if (item.score >= threshold) {
-                    span.classList.add('highlighted');
+                if (useGradient) {
+                    // Map score (0-1) to opacity (0.4-1.0) and font-weight (400-800)
+                    const opacity = 0.4 + (item.score * 0.6);
+                    const weight = 400 + Math.round(item.score * 400);
+                    span.style.opacity = opacity;
+                    span.style.fontWeight = weight;
+                } else {
+                    // Binary threshold mode
+                    span.style = ''; // reset inline styles
+                    if (item.score >= threshold) span.classList.add('highlighted');
                 }
-
-                // If the raw token started with a space, add it here.
-                // The backend replaced the special block char with a normal space.
-                // Depending on the tokenizer, 'word' might be better to display if it represents whole words,
-                // but for subwords, using the raw token with correct spacing is usually best.
-                let displayText = item.token;
                 
-                span.textContent = displayText;
+                span.textContent = item.token;
                 resultContainer.appendChild(span);
             });
+        }
+
+        // ==========================================
+        // USER STUDY LOGIC
+        // ==========================================
+        const userId = 'user_' + Math.random().toString(36).substr(2, 9);
+        let studyTexts = [];
+        let currentStep = 0; 
+        let conditionOrder = []; 
+        let readingStartTime = 0;
+        let flowReadHTMLs = {}; 
+        let currentReadingTimeMs = 0;
+
+        document.getElementById('start-study-btn').addEventListener('click', async () => {
+            document.getElementById('study-intro').style.display = 'none';
+            document.getElementById('study-loading').style.display = 'block';
+
+            try {
+                // 1. Fetch texts from backend
+                const res = await fetch('/api/study/texts');
+                const data = await res.json();
+                studyTexts = data.texts;
+
+                // 2. Randomize condition order for A/B testing
+                conditionOrder = Math.random() > 0.5 ? ['plain', 'flowread'] : ['flowread', 'plain'];
+
+                // 3. Pre-calculate FlowRead AI highlighting so the timer isn't affected by network latency
+                const flowReadTextIndex = conditionOrder.indexOf('flowread');
+                const textToHighlight = studyTexts[flowReadTextIndex].text;
+                
+                const analyzeRes = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: textToHighlight, layer: 'middle' })
+                });
+                const analyzeData = await analyzeRes.json();
+                
+                let html = '';
+                const threshold = 0.35; // Fixed threshold for the study
+                (analyzeData.words || []).forEach((item, index) => {
+                    if (index === 0 && (item.token.includes('<bos>') || item.word.includes('<bos>'))) return;
+                    let className = 'token';
+                    if (item.score >= threshold) className += ' highlighted';
+                    html += `<span class="${className}">${item.token}</span>`;
+                });
+                flowReadHTMLs[studyTexts[flowReadTextIndex].id] = html;
+
+                // 4. Start the first reading task
+                document.getElementById('study-loading').style.display = 'none';
+                showReadingScreen();
+
+            } catch (err) {
+                console.error(err);
+                alert("Error starting study. Please try again later.");
+                document.getElementById('study-loading').style.display = 'none';
+                document.getElementById('study-intro').style.display = 'block';
+            }
+        });
+
+        function showReadingScreen() {
+            const currentData = studyTexts[currentStep];
+            const currentCondition = conditionOrder[currentStep];
+
+            document.getElementById('study-topic').textContent = currentData.topic + (currentCondition === 'flowread' ? ' (FlowRead Enhanced)' : '');
+            document.getElementById('study-progress').textContent = `Text ${currentStep + 1} of 2`;
+
+            const contentDiv = document.getElementById('study-text-content');
+            if (currentCondition === 'flowread') {
+                contentDiv.innerHTML = flowReadHTMLs[currentData.id];
+            } else {
+                contentDiv.textContent = currentData.text;
+            }
+
+            document.getElementById('study-reading').style.display = 'block';
+            // Record exact start time
+            readingStartTime = performance.now();
+        }
+
+        document.getElementById('done-reading-btn').addEventListener('click', () => {
+            // Record exact end time
+            currentReadingTimeMs = Math.round(performance.now() - readingStartTime);
+            document.getElementById('study-reading').style.display = 'none';
+            showQuestionsScreen();
+        });
+
+        function showQuestionsScreen() {
+            const currentData = studyTexts[currentStep];
+            const container = document.getElementById('questions-container');
+            container.innerHTML = '';
+
+            currentData.questions.forEach((q, qIndex) => {
+                const qDiv = document.createElement('div');
+                qDiv.style.marginBottom = '1.5rem';
+                qDiv.style.background = '#fff';
+                qDiv.style.padding = '1rem';
+                qDiv.style.borderRadius = '0.375rem';
+                qDiv.style.border = '1px solid #e5e7eb';
+                
+                qDiv.innerHTML = `<p style="font-weight: bold; margin-top: 0; margin-bottom: 0.75rem;">${qIndex + 1}. ${q.question}</p>`;
+                
+                q.options.forEach((opt, oIndex) => {
+                    qDiv.innerHTML += `
+                        <label style="display: block; margin-bottom: 0.5rem; cursor: pointer; padding: 0.25rem 0;">
+                            <input type="radio" name="q${qIndex}" value="${oIndex}" style="margin-right: 0.5rem;"> ${opt}
+                        </label>
+                    `;
+                });
+                container.appendChild(qDiv);
+            });
+
+            document.getElementById('study-questions').style.display = 'block';
+        }
+
+        document.getElementById('submit-answers-btn').addEventListener('click', async () => {
+            const currentData = studyTexts[currentStep];
+            let score = 0;
+            let allAnswered = true;
+
+            // Grade questions
+            currentData.questions.forEach((q, qIndex) => {
+                const selected = document.querySelector(`input[name="q${qIndex}"]:checked`);
+                if (!selected) {
+                    allAnswered = false;
+                } else if (parseInt(selected.value) === q.correct) {
+                    score++;
+                }
+            });
+
+            if (!allAnswered) {
+                alert("Please answer all questions before proceeding.");
+                return;
+            }
+
+            document.getElementById('submit-answers-btn').disabled = true;
+            document.getElementById('submit-answers-btn').textContent = "Submitting...";
+
+            // Send result to backend
+            try {
+                await fetch('/api/study/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        text_id: currentData.id,
+                        condition: conditionOrder[currentStep],
+                        reading_time_ms: currentReadingTimeMs,
+                        score: score,
+                        total_questions: currentData.questions.length
+                    })
+                });
+            } catch (err) {
+                console.error("Failed to submit result:", err);
+            }
+
+            document.getElementById('study-questions').style.display = 'none';
+            document.getElementById('submit-answers-btn').disabled = false;
+            document.getElementById('submit-answers-btn').textContent = "Submit Answers";
+
+            currentStep++;
+            if (currentStep < 2) {
+                // Next text
+                showReadingScreen();
+            } else {
+                // Done! Show stats
+                showResultsScreen();
+            }
+        });
+
+        async function showResultsScreen() {
+            document.getElementById('study-loading').style.display = 'block';
+            document.getElementById('study-loading-title').textContent = "Loading global statistics...";
+            
+            try {
+                const res = await fetch('/api/study/stats');
+                const stats = await res.json();
+
+                const formatTime = ms => ms ? (ms / 1000).toFixed(1) + ' s' : '-- s';
+                const formatAcc = pct => pct ? Math.round(pct) + '%' : '--%';
+
+                document.getElementById('stat-plain-time').textContent = formatTime(stats.plain.avg_reading_time_ms);
+                document.getElementById('stat-plain-acc').textContent = formatAcc(stats.plain.avg_accuracy_percent);
+                
+                document.getElementById('stat-flow-time').textContent = formatTime(stats.flowread.avg_reading_time_ms);
+                document.getElementById('stat-flow-acc').textContent = formatAcc(stats.flowread.avg_accuracy_percent);
+
+                document.getElementById('stat-sample-size').textContent = stats.plain.sample_size + stats.flowread.sample_size;
+
+                document.getElementById('study-loading').style.display = 'none';
+                document.getElementById('study-results').style.display = 'block';
+
+            } catch (err) {
+                console.error(err);
+                alert("Error loading stats.");
+            }
         }
     </script>
 </body>
