@@ -20,11 +20,7 @@
             margin-bottom: 0.5rem;
             text-align: center;
             font-weight: 800;
-            background: linear-gradient(to right, #1c1917 0%, #1c1917 40%, #a8a29e 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            color: transparent;
+            color: #1c1917;
         }
 
         p.subtitle {
@@ -211,7 +207,7 @@
 </head>
 <body>
 
-    <h1>FlowRead</h1>
+    <h1>Flow<span style="color: #a8a29e; font-weight: 500;">Read</span></h1>
     <p class="subtitle">Accelerate reading comprehension using LLM attention vectors.</p>
 
     <div class="tabs">
@@ -514,26 +510,9 @@
                 // 2. Randomize condition order for A/B testing
                 conditionOrder = Math.random() > 0.5 ? ['plain', 'flowread'] : ['flowread', 'plain'];
 
-                // 3. Pre-calculate FlowRead AI highlighting so the timer isn't affected by network latency
+                // 3. Since the HTML is pre-calculated by the backend, just load it into our dict
                 const flowReadTextIndex = conditionOrder.indexOf('flowread');
-                const textToHighlight = studyTexts[flowReadTextIndex].text;
-                
-                const analyzeRes = await fetch('/analyze', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: textToHighlight, layer: 'middle' })
-                });
-                const analyzeData = await analyzeRes.json();
-                
-                let html = '';
-                const threshold = 0.35; // Fixed threshold for the study
-                (analyzeData.words || []).forEach((item, index) => {
-                    if (index === 0 && (item.token.includes('<bos>') || item.word.includes('<bos>'))) return;
-                    let className = 'token';
-                    if (item.score >= threshold) className += ' highlighted';
-                    html += `<span class="${className}">${item.token}</span>`;
-                });
-                flowReadHTMLs[studyTexts[flowReadTextIndex].id] = html;
+                flowReadHTMLs[studyTexts[flowReadTextIndex].id] = studyTexts[flowReadTextIndex].flowread_html;
 
                 // 4. Start the first reading task
                 document.getElementById('study-loading').style.display = 'none';
