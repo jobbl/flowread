@@ -1,3 +1,12 @@
+---
+title: FlowRead AI
+emoji: 📖
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
 # FlowRead AI (Gemma 4 Good Hackathon Submission)
 
 **Accelerate reading comprehension using LLM attention vectors.**
