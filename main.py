@@ -27,7 +27,10 @@ def read_root():
     return RedirectResponse(url="/static/index.html")
 
 # --- SQLite Database Setup ---
-DB_FILE = "study.db"
+# Hugging Face Spaces make the /app directory read-only by default.
+# We must write the database to /data (if persistent storage is enabled) or /tmp.
+DB_DIR = "/data" if os.path.exists("/data") else "/tmp"
+DB_FILE = os.path.join(DB_DIR, "study.db")
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
