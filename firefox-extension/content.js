@@ -79,8 +79,117 @@ browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       console.error(err);
       showToast("Error: Could not reach FlowRead API", 3000);
     }
+  } else if (request.action === "flowread_page") {
+    await processEntirePage();
   }
 });
+
+async function processEntirePage() {
+  const settings = await browser.storage.local.get(['threshold', 'gradientMode', 'preprompt', 'apiUrl']);
+  const threshold = settings.threshold !== undefined ? settings.threshold : 0.35;
+  const useGradient = settings.gradientMode || false;
+  const preprompt = settings.preprompt || "";
+  const apiUrl = settings.apiUrl || "http://127.0.0.1:8000";
+  const checkedLayers = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+
+  // To prevent freezing the browser or overwhelming the API, process in batches
+  const walkerObj = document.createTreeWalker(
+    document.body,
+    NodeFilter.SHOW_TEXT,
+    {
+      acceptNode: function(node) {
+        const text = node.nodeValue.trim();
+        // Skip very short fragments
+        if (text.split(/\s+/).length < 5) {
+          return NodeFilter.FILTER_SKIP;
+        }
+
+        // Exclude specific parent tags
+        let p = node.parentNode;
+        const excludeTags = ['SCRIPT', 'STYLE', 'NOSCRIPT', 'BUTTON', 'INPUT', 'TEXTAREA', 'CODE', 'PRE', 'NAV', 'HEADER', 'FOOTER', 'A', 'SELECT', 'OPTION', 'svg'];
+        
+        while (p && p !== document.body) {
+          if (excludeTags.includes(p.tagName)) {
+            return NodeFilter.FILTER_REJECT;
+          }
+          if (p.classList && p.classList.contains('flowread-container')) {
+             return NodeFilter.FILTER_REJECT;
+          }
+          p = p.parentNode;
+        }
+        
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    }
+  );
+
+  const nodesToProcess = [];
+  let currentNode;
+  while (currentNode = walkerObj.nextNode()) {
+    // Exclude hidden elements dynamically
+    const element = currentNode.parentElement;
+    if (element) {
+      const style = window.getComputedStyle(element);
+      if (style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0') {
+         nodesToProcess.push(currentNode);
+      }
+    } else {
+      nodesToProcess.push(currentNode);
+    }
+  }
+
+  if (nodesToProcess.length === 0) {
+    showToast("No suitable text found on page.", 2000);
+    return;
+  }
+
+  // To prevent freezing the browser or overwhelming the API, process in batches
+  const batchSize = 3;
+  let processedCount = 0;
+
+  for (let i = 0; i < nodesToProcess.length; i += batchSize) {
+    const batch = nodesToProcess.slice(i, i + batchSize);
+    showToast(`FlowRead analyzing page (${processedCount}/${nodesToProcess.length} blocks)...`, 0);
+
+    await Promise.all(batch.map(async (node) => {
+      const text = node.nodeValue;
+      if (!text.trim()) return;
+
+      try {
+        const response = await fetch(`${apiUrl}/analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            text: text, 
+            preprompt: preprompt, 
+            layers: checkedLayers 
+          })
+        });
+
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!data.words) return;
+
+        const htmlString = generateFlowReadHTML(data.words, threshold, useGradient);
+        
+        const container = document.createElement('span');
+        container.className = 'flowread-container';
+        container.innerHTML = htmlString;
+        
+        if (node.parentNode) {
+           node.parentNode.replaceChild(container, node);
+        }
+
+      } catch (err) {
+        console.error("Batch error on node:", err);
+      }
+    }));
+    
+    processedCount += batch.length;
+  }
+
+  showToast(`Done! Analyzed ${processedCount} blocks.`, 2000);
+}
 
 // Grouping logic extracted from your frontend code
 function generateFlowReadHTML(currentTokens, threshold, useGradient) {

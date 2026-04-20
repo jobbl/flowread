@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const prepromptInput = document.getElementById('preprompt');
   const apiUrlInput = document.getElementById('api-url');
   const saveBtn = document.getElementById('save-btn');
+  const pageBtn = document.getElementById('page-btn');
 
   // Load existing settings
   browser.storage.local.get(['threshold', 'gradientMode', 'preprompt', 'apiUrl'], (res) => {
@@ -38,6 +39,15 @@ document.addEventListener('DOMContentLoaded', () => {
     browser.storage.local.set(settings).then(() => {
       saveBtn.textContent = 'Saved!';
       setTimeout(() => saveBtn.textContent = 'Save Settings', 1500);
+    });
+  });
+
+  pageBtn.addEventListener('click', () => {
+    browser.tabs.query({active: true, currentWindow: true}, (tabs) => {
+      if (tabs[0]) {
+        browser.tabs.sendMessage(tabs[0].id, { action: "flowread_page" });
+        window.close(); // Close popup
+      }
     });
   });
 });
