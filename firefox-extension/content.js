@@ -56,8 +56,10 @@ browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
             const statusRes = await fetch(`${apiUrl}/status`);
             if (statusRes.ok) {
               const statusData = await statusRes.json();
-              if (statusData[modelVersion] === "downloading") {
-                showToast(`Downloading Gemma 4 (${modelVersion})... this may take a few minutes.`, 0);
+              if (statusData[modelVersion] && statusData[modelVersion].startsWith("downloading")) {
+                const parts = statusData[modelVersion].split(": ");
+                const progress = parts.length > 1 ? parts[1] : "...";
+                showToast(`Downloading Gemma 4 (${modelVersion}) ${progress}... this may take a few minutes.`, 0);
               }
             }
           } catch (e) {
@@ -188,8 +190,10 @@ async function processEntirePage() {
         const statusRes = await fetch(`${apiUrl}/status`);
         if (statusRes.ok) {
           const statusData = await statusRes.json();
-          if (statusData[modelVersion] === "downloading") {
-            showToast(`Downloading Gemma 4 (${modelVersion})... this may take a few minutes.`, 0);
+          if (statusData[modelVersion] && statusData[modelVersion].startsWith("downloading")) {
+            const parts = statusData[modelVersion].split(": ");
+            const progress = parts.length > 1 ? parts[1] : "...";
+            showToast(`Downloading Gemma 4 (${modelVersion}) ${progress}... this may take a few minutes.`, 0);
           }
         }
       } catch (e) {}
@@ -203,8 +207,13 @@ async function processEntirePage() {
     
     // Only show analyzing text if not downloading
     const statusResTemp = await fetch(`${apiUrl}/status`).catch(() => null);
-    if (!statusResTemp || !statusResTemp.ok || (await statusResTemp.json())[modelVersion] !== "downloading") {
+    if (!statusResTemp || !statusResTemp.ok) {
        showToast(`FlowRead analyzing page (${processedCount}/${nodesToProcess.length} blocks)...`, 0);
+    } else {
+       const statusJson = await statusResTemp.json();
+       if (!statusJson[modelVersion] || !statusJson[modelVersion].startsWith("downloading")) {
+          showToast(`FlowRead analyzing page (${processedCount}/${nodesToProcess.length} blocks)...`, 0);
+       }
     }
 
     await Promise.all(batch.map(async (node) => {
@@ -287,8 +296,10 @@ async function updateExisting(newSettings) {
                const statusRes = await fetch(`${apiUrl}/status`);
                if (statusRes.ok) {
                  const statusData = await statusRes.json();
-                 if (statusData[modelVersion] === "downloading") {
-                   showToast(`Downloading Gemma 4 (${modelVersion})... this may take a few minutes.`, 0);
+                 if (statusData[modelVersion] && statusData[modelVersion].startsWith("downloading")) {
+                   const parts = statusData[modelVersion].split(": ");
+                   const progress = parts.length > 1 ? parts[1] : "...";
+                   showToast(`Downloading Gemma 4 (${modelVersion}) ${progress}... this may take a few minutes.`, 0);
                  }
                }
              } catch (e) {}

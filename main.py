@@ -233,6 +233,30 @@ def get_study_stats():
         "preferences": preferences
     }
 
+import sys
+import re
+
+class StderrProgressInterceptor:
+    def __init__(self, original):
+        self.original = original
+        self.current_progress = ""
+        self.active_model = None
+
+    def write(self, s):
+        self.original.write(s)
+        match = re.search(r'(\d+)%\|', s)
+        if match and self.active_model:
+            pct = match.group(1)
+            self.current_progress = f"{pct}%"
+            # Update the global status explicitly so the API returns it immediately
+            model_status[self.active_model] = f"downloading: {self.current_progress}"
+            
+    def flush(self):
+        self.original.flush()
+
+stderr_interceptor = StderrProgressInterceptor(sys.stderr)
+sys.stderr = stderr_interceptor
+
 # --- Saliency API (Existing) ---
 models = {}
 tokenizers = {}
@@ -249,7 +273,8 @@ def load_model(model_name: str):
         return models[model_name], tokenizers[model_name]
         
     print(f"Loading {model_name} on {device}...")
-    model_status[model_name] = "downloading"
+    model_status[model_name] = "downloading: 0%"
+    stderr_interceptor.active_model = model_name
     try:
         if model_name == "27b-4a":
             # Use Gemma 4 27B in 4-bit (requires CUDA)
@@ -285,10 +310,12 @@ def load_model(model_name: str):
         models[model_name] = model
         tokenizers[model_name] = tokenizer
         model_status[model_name] = "loaded"
+        stderr_interceptor.active_model = None
         return model, tokenizer
     except Exception as e:
         print(f"Error loading model {model_name}: {e}")
         model_status[model_name] = "error"
+        stderr_interceptor.active_model = None
         raise e
 
 # Pre-load default 2b

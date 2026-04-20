@@ -485,8 +485,10 @@
                         const statusRes = await fetch('/status');
                         if (statusRes.ok) {
                             const statusData = await statusRes.json();
-                            if (statusData[modelVersion] === "downloading") {
-                                loading.textContent = `Downloading Gemma 4 (${modelVersion}) Model... this takes a few minutes.`;
+                            if (statusData[modelVersion] && statusData[modelVersion].startsWith("downloading")) {
+                                const parts = statusData[modelVersion].split(": ");
+                                const progress = parts.length > 1 ? parts[1] : "...";
+                                loading.textContent = `Downloading Gemma 4 (${modelVersion}) Model ${progress}... this takes a few minutes.`;
                             }
                         }
                     } catch(e) {}
