@@ -277,8 +277,8 @@ def load_model(model_name: str):
     stderr_interceptor.active_model = model_name
     try:
         if model_name == "27b-4a":
-            # Use Gemma 4 27B in 4-bit (requires CUDA)
-            hf_model_id = "unsloth/gemma-4-27b"
+            # Use Gemma 4 26B A4B in 4-bit (requires CUDA)
+            hf_model_id = "unsloth/gemma-4-26B-A4B"
             tokenizer = AutoTokenizer.from_pretrained(hf_model_id, token=hf_token)
             
             # BitsAndBytes for 4-bit quantization
@@ -296,8 +296,8 @@ def load_model(model_name: str):
                 token=hf_token
             )
         else:
-            # Default to 2b
-            hf_model_id = "unsloth/gemma-4-2b"
+            # Default to 2b (Gemma 4 E2B)
+            hf_model_id = "unsloth/gemma-4-E2B"
             tokenizer = AutoTokenizer.from_pretrained(hf_model_id, token=hf_token)
             model = AutoModelForCausalLM.from_pretrained(
                 hf_model_id,
