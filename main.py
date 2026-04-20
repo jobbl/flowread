@@ -260,6 +260,7 @@ class TextRequest(BaseModel):
     text: str
     layers: Optional[List[int]] = None  # List of layer indices to average
     preprompt: str = ""    # Optional task-driven intent
+    saliency_mode: str = "local" # "local" or "global"
 
 @app.post("/analyze")
 async def analyze_text(request: TextRequest):
@@ -307,18 +308,26 @@ async def analyze_text(request: TextRequest):
     # Calculate importance: sum of attention each token *receives* from the sequence
     importance = avg_attention.sum(dim=0).cpu().float().numpy()
     
+    import numpy as np
+
     if len(importance) > num_preprompt_tokens:
-        # Normalize to 0-1, excluding the preprompt and <bos> from max/min calculation
-        # as they often have very high attention, skewing the rest
         text_importance = importance[num_preprompt_tokens:]
-        min_score = text_importance.min()
-        max_score = text_importance.max()
         
-        # Avoid division by zero
-        if max_score > min_score:
-            normalized_scores = (importance - min_score) / (max_score - min_score)
+        if request.saliency_mode == "global":
+            # Global Mode: absolute importance across different texts
+            # We apply a soft root penalty so very high values don't entirely blow out the scale,
+            # but high-density blocks will still look visibly darker/bolder than simple blocks.
+            # An importance sum of 1.0 (average) maps to ~0.46, an importance of 3.0+ maps to 1.0
+            normalized_scores = np.clip((importance / 3.0) ** 0.7, 0, 1.0)
         else:
-            normalized_scores = importance - min_score
+            # Local Mode: relative importance within this specific block of text
+            min_score = text_importance.min()
+            max_score = text_importance.max()
+            
+            if max_score > min_score:
+                normalized_scores = (importance - min_score) / (max_score - min_score)
+            else:
+                normalized_scores = importance - min_score
             
         # Keep <bos> at max score
         normalized_scores[0] = 1.0

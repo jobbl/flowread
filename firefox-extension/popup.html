@@ -91,6 +91,13 @@
   <input type="text" id="preprompt" placeholder="e.g., Focus on numbers and dates">
   <p class="help">Instruct the AI what to focus on before generating saliency.</p>
 
+  <label for="saliency-mode">Saliency Mode</label>
+  <select id="saliency-mode" style="width: 100%; margin-bottom: 15px; padding: 8px; border: 1px solid #d6d3d1; border-radius: 4px; font-family: inherit;">
+    <option value="local">Local (Relative to text block)</option>
+    <option value="global">Global (Absolute importance)</option>
+  </select>
+  <p class="help" style="margin-top: 0;">Global mode allows comparing importance across different paragraphs.</p>
+
   <label for="api-url">Backend API URL</label>
   <input type="text" id="api-url" placeholder="http://127.0.0.1:8000">
   <p class="help">URL of your FlowRead backend (Local or Hugging Face).</p>

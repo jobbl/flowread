@@ -3,12 +3,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const thresholdVal = document.getElementById('threshold-val');
   const gradientModeInput = document.getElementById('gradient-mode');
   const prepromptInput = document.getElementById('preprompt');
+  const saliencyModeInput = document.getElementById('saliency-mode');
   const apiUrlInput = document.getElementById('api-url');
   const saveBtn = document.getElementById('save-btn');
   const pageBtn = document.getElementById('page-btn');
 
   // Load existing settings
-  browser.storage.local.get(['threshold', 'gradientMode', 'preprompt', 'apiUrl'], (res) => {
+  browser.storage.local.get(['threshold', 'gradientMode', 'preprompt', 'saliencyMode', 'apiUrl'], (res) => {
     if (res.threshold !== undefined) {
       thresholdInput.value = res.threshold;
       thresholdVal.textContent = parseFloat(res.threshold).toFixed(2);
@@ -18,6 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (res.preprompt !== undefined) {
       prepromptInput.value = res.preprompt;
+    }
+    if (res.saliencyMode !== undefined) {
+      saliencyModeInput.value = res.saliencyMode;
     }
     apiUrlInput.value = res.apiUrl || "http://127.0.0.1:8000";
   });
@@ -33,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
       threshold: parseFloat(thresholdInput.value),
       gradientMode: gradientModeInput.checked,
       preprompt: prepromptInput.value.trim(),
+      saliencyMode: saliencyModeInput.value,
       apiUrl: apiUrlInput.value.trim().replace(/\/$/, '') // Remove trailing slash
     };
     
