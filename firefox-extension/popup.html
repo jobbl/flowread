@@ -98,6 +98,13 @@
   </select>
   <p class="help" style="margin-top: 0;">Global mode allows comparing importance across different paragraphs.</p>
 
+  <label for="model-version">Model Version</label>
+  <select id="model-version" style="width: 100%; margin-bottom: 15px; padding: 8px; border: 1px solid #d6d3d1; border-radius: 4px; font-family: inherit;">
+    <option value="2b">Gemma 2B (Fast / Default)</option>
+    <option value="27b-4a">Gemma 27B 4-bit (High Quality)</option>
+  </select>
+  <p class="help" style="margin-top: 0;">Select which LLM to use for saliency analysis.</p>
+
   <label for="api-url">Backend API URL</label>
   <input type="text" id="api-url" placeholder="http://127.0.0.1:8000">
   <p class="help">URL of your FlowRead backend (Local or Hugging Face).</p>

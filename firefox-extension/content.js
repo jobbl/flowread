@@ -37,18 +37,19 @@ browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     const range = selection.getRangeAt(0);
 
     // Get user settings
-    const settings = await browser.storage.local.get(['threshold', 'gradientMode', 'preprompt', 'saliencyMode', 'apiUrl']);
+    const settings = await browser.storage.local.get(['threshold', 'gradientMode', 'preprompt', 'saliencyMode', 'modelVersion', 'apiUrl']);
     const threshold = settings.threshold !== undefined ? settings.threshold : 0.35;
     const useGradient = settings.gradientMode || false;
     const preprompt = settings.preprompt || "";
     const saliencyMode = settings.saliencyMode || "local";
+    const modelVersion = settings.modelVersion || "2b";
     const apiUrl = settings.apiUrl || "http://127.0.0.1:8000";
     // Default to middle layers just like the playground
     const checkedLayers = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 
     try {
       // Connect to the configured API Space
-      const response = await fetch(`${apiUrl}/analyze`, {
+      const response = await fetch(`${apiUrl}/analyze/${modelVersion}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -75,6 +76,7 @@ browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       container.dataset.tokens = JSON.stringify(currentTokens);
       container.dataset.preprompt = preprompt;
       container.dataset.saliencyMode = saliencyMode;
+      container.dataset.modelVersion = modelVersion;
       container.dataset.originalText = selectedText;
       container.innerHTML = htmlString;
       range.insertNode(container);
@@ -93,11 +95,12 @@ browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
 });
 
 async function processEntirePage() {
-  const settings = await browser.storage.local.get(['threshold', 'gradientMode', 'preprompt', 'saliencyMode', 'apiUrl']);
+  const settings = await browser.storage.local.get(['threshold', 'gradientMode', 'preprompt', 'saliencyMode', 'modelVersion', 'apiUrl']);
   const threshold = settings.threshold !== undefined ? settings.threshold : 0.35;
   const useGradient = settings.gradientMode || false;
   const preprompt = settings.preprompt || "";
   const saliencyMode = settings.saliencyMode || "local";
+  const modelVersion = settings.modelVersion || "2b";
   const apiUrl = settings.apiUrl || "http://127.0.0.1:8000";
   const checkedLayers = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 
@@ -165,7 +168,7 @@ async function processEntirePage() {
       if (!text.trim()) return;
 
       try {
-        const response = await fetch(`${apiUrl}/analyze`, {
+        const response = await fetch(`${apiUrl}/analyze/${modelVersion}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -187,6 +190,7 @@ async function processEntirePage() {
         container.dataset.tokens = JSON.stringify(data.words);
         container.dataset.preprompt = preprompt;
         container.dataset.saliencyMode = saliencyMode;
+        container.dataset.modelVersion = modelVersion;
         container.dataset.originalText = text;
         container.innerHTML = htmlString;
         
@@ -210,6 +214,7 @@ async function updateExisting(newSettings) {
   const useGradient = newSettings.gradientMode || false;
   const preprompt = newSettings.preprompt || "";
   const saliencyMode = newSettings.saliencyMode || "local";
+  const modelVersion = newSettings.modelVersion || "2b";
   const apiUrl = newSettings.apiUrl || "http://127.0.0.1:8000";
   const checkedLayers = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 
@@ -222,15 +227,16 @@ async function updateExisting(newSettings) {
   for (const container of containers) {
     const oldPreprompt = container.dataset.preprompt || "";
     const oldMode = container.dataset.saliencyMode || "local";
+    const oldModelVersion = container.dataset.modelVersion || "2b";
     const text = container.dataset.originalText;
     if (!text) continue;
 
-    if (oldPreprompt !== preprompt || oldMode !== saliencyMode) {
+    if (oldPreprompt !== preprompt || oldMode !== saliencyMode || oldModelVersion !== modelVersion) {
       if (reFetchCount === 0) {
          showToast("Updating FlowRead elements with new settings...", 0);
       }
       try {
-        const response = await fetch(`${apiUrl}/analyze`, {
+        const response = await fetch(`${apiUrl}/analyze/${modelVersion}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -248,6 +254,7 @@ async function updateExisting(newSettings) {
         container.dataset.tokens = JSON.stringify(data.words);
         container.dataset.preprompt = preprompt;
         container.dataset.saliencyMode = saliencyMode;
+        container.dataset.modelVersion = modelVersion;
         const htmlString = generateFlowReadHTML(data.words, threshold, useGradient);
         container.innerHTML = htmlString;
         reFetchCount++;
