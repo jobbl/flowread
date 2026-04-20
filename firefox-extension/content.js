@@ -48,6 +48,26 @@ browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     const checkedLayers = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 
     try {
+      // Start polling status
+      let isFetching = true;
+      const pollStatus = async () => {
+        while (isFetching) {
+          try {
+            const statusRes = await fetch(`${apiUrl}/status`);
+            if (statusRes.ok) {
+              const statusData = await statusRes.json();
+              if (statusData[modelVersion] === "downloading") {
+                showToast(`Downloading Gemma 4 (${modelVersion})... this may take a few minutes.`, 0);
+              }
+            }
+          } catch (e) {
+            // ignore network errors for status polling
+          }
+          await new Promise(r => setTimeout(r, 2000));
+        }
+      };
+      pollStatus();
+
       // Connect to the configured API Space
       const response = await fetch(`${apiUrl}/analyze/${modelVersion}`, {
         method: 'POST',
@@ -59,6 +79,7 @@ browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
           layers: checkedLayers 
         })
       });
+      isFetching = false;
 
       if (!response.ok) throw new Error('API error');
       
@@ -159,9 +180,32 @@ async function processEntirePage() {
   const batchSize = 3;
   let processedCount = 0;
 
+  // Polling logic for first request
+  let isFetchingStatus = true;
+  const pollStatus = async () => {
+    while (isFetchingStatus) {
+      try {
+        const statusRes = await fetch(`${apiUrl}/status`);
+        if (statusRes.ok) {
+          const statusData = await statusRes.json();
+          if (statusData[modelVersion] === "downloading") {
+            showToast(`Downloading Gemma 4 (${modelVersion})... this may take a few minutes.`, 0);
+          }
+        }
+      } catch (e) {}
+      await new Promise(r => setTimeout(r, 2000));
+    }
+  };
+  pollStatus();
+
   for (let i = 0; i < nodesToProcess.length; i += batchSize) {
     const batch = nodesToProcess.slice(i, i + batchSize);
-    showToast(`FlowRead analyzing page (${processedCount}/${nodesToProcess.length} blocks)...`, 0);
+    
+    // Only show analyzing text if not downloading
+    const statusResTemp = await fetch(`${apiUrl}/status`).catch(() => null);
+    if (!statusResTemp || !statusResTemp.ok || (await statusResTemp.json())[modelVersion] !== "downloading") {
+       showToast(`FlowRead analyzing page (${processedCount}/${nodesToProcess.length} blocks)...`, 0);
+    }
 
     await Promise.all(batch.map(async (node) => {
       const text = node.nodeValue;
@@ -206,6 +250,7 @@ async function processEntirePage() {
     processedCount += batch.length;
   }
 
+  isFetchingStatus = false;
   showToast(`Done! Analyzed ${processedCount} blocks.`, 2000);
 }
 
@@ -223,6 +268,7 @@ async function updateExisting(newSettings) {
 
   let reFetchCount = 0;
   let rerenderCount = 0;
+  let isFetchingStatus = false;
 
   for (const container of containers) {
     const oldPreprompt = container.dataset.preprompt || "";
@@ -234,6 +280,21 @@ async function updateExisting(newSettings) {
     if (oldPreprompt !== preprompt || oldMode !== saliencyMode || oldModelVersion !== modelVersion) {
       if (reFetchCount === 0) {
          showToast("Updating FlowRead elements with new settings...", 0);
+         isFetchingStatus = true;
+         (async () => {
+           while (isFetchingStatus) {
+             try {
+               const statusRes = await fetch(`${apiUrl}/status`);
+               if (statusRes.ok) {
+                 const statusData = await statusRes.json();
+                 if (statusData[modelVersion] === "downloading") {
+                   showToast(`Downloading Gemma 4 (${modelVersion})... this may take a few minutes.`, 0);
+                 }
+               }
+             } catch (e) {}
+             await new Promise(r => setTimeout(r, 2000));
+           }
+         })();
       }
       try {
         const response = await fetch(`${apiUrl}/analyze/${modelVersion}`, {
@@ -273,6 +334,8 @@ async function updateExisting(newSettings) {
       }
     }
   }
+
+  isFetchingStatus = false;
 
   if (reFetchCount > 0) {
     showToast(`Updated ${reFetchCount} blocks with new AI intent!`, 2000);

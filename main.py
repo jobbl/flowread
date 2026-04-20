@@ -236,6 +236,10 @@ def get_study_stats():
 # --- Saliency API (Existing) ---
 models = {}
 tokenizers = {}
+model_status = {
+    "2b": "unloaded",
+    "27b-4a": "unloaded"
+}
 
 device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
 hf_token = os.environ.get("HF_TOKEN")
@@ -245,6 +249,7 @@ def load_model(model_name: str):
         return models[model_name], tokenizers[model_name]
         
     print(f"Loading {model_name} on {device}...")
+    model_status[model_name] = "downloading"
     try:
         if model_name == "27b-4a":
             # Use Gemma 4 27B in 4-bit (requires CUDA)
@@ -279,9 +284,11 @@ def load_model(model_name: str):
         print(f"Model {model_name} loaded successfully.")
         models[model_name] = model
         tokenizers[model_name] = tokenizer
+        model_status[model_name] = "loaded"
         return model, tokenizer
     except Exception as e:
         print(f"Error loading model {model_name}: {e}")
+        model_status[model_name] = "error"
         raise e
 
 # Pre-load default 2b
@@ -290,6 +297,10 @@ try:
 except:
     print("Could not preload 2b model.")
 
+@app.get("/status")
+def get_model_status():
+    return model_status
+
 class TextRequest(BaseModel):
     text: str
     layers: Optional[List[int]] = None  # List of layer indices to average
@@ -297,11 +308,11 @@ class TextRequest(BaseModel):
     saliency_mode: str = "local" # "local" or "global"
 
 @app.post("/analyze")
-async def analyze_text_legacy(request: TextRequest):
-    return await analyze_text_model("2b", request)
+def analyze_text_legacy(request: TextRequest):
+    return analyze_text_model("2b", request)
 
 @app.post("/analyze/{model_name}")
-async def analyze_text_model(model_name: str, request: TextRequest):
+def analyze_text_model(model_name: str, request: TextRequest):
     text = request.text
     preprompt = request.preprompt.strip()
     
