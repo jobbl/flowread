@@ -5,3 +5,5 @@ transformers
 pydantic
 accelerate
 bitsandbytes
+protobuf
+sentencepiece
