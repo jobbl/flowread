@@ -70,6 +70,9 @@ browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       
       const container = document.createElement('span');
       container.className = 'flowread-container';
+      container.dataset.tokens = JSON.stringify(currentTokens);
+      container.dataset.preprompt = preprompt;
+      container.dataset.originalText = selectedText;
       container.innerHTML = htmlString;
       range.insertNode(container);
       
@@ -81,6 +84,8 @@ browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     }
   } else if (request.action === "flowread_page") {
     await processEntirePage();
+  } else if (request.action === "settings_updated") {
+    await updateExisting(request.settings);
   }
 });
 
@@ -174,6 +179,9 @@ async function processEntirePage() {
         
         const container = document.createElement('span');
         container.className = 'flowread-container';
+        container.dataset.tokens = JSON.stringify(data.words);
+        container.dataset.preprompt = preprompt;
+        container.dataset.originalText = text;
         container.innerHTML = htmlString;
         
         if (node.parentNode) {
@@ -189,6 +197,71 @@ async function processEntirePage() {
   }
 
   showToast(`Done! Analyzed ${processedCount} blocks.`, 2000);
+}
+
+async function updateExisting(newSettings) {
+  const threshold = newSettings.threshold !== undefined ? newSettings.threshold : 0.35;
+  const useGradient = newSettings.gradientMode || false;
+  const preprompt = newSettings.preprompt || "";
+  const apiUrl = newSettings.apiUrl || "http://127.0.0.1:8000";
+  const checkedLayers = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+
+  const containers = document.querySelectorAll('.flowread-container');
+  if (containers.length === 0) return;
+
+  let reFetchCount = 0;
+  let rerenderCount = 0;
+
+  for (const container of containers) {
+    const oldPreprompt = container.dataset.preprompt || "";
+    const text = container.dataset.originalText;
+    if (!text) continue;
+
+    if (oldPreprompt !== preprompt) {
+      if (reFetchCount === 0) {
+         showToast("Updating FlowRead elements with new intent...", 0);
+      }
+      try {
+        const response = await fetch(`${apiUrl}/analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            text: text, 
+            preprompt: preprompt, 
+            layers: checkedLayers 
+          })
+        });
+
+        if (!response.ok) continue;
+        const data = await response.json();
+        if (!data.words) continue;
+
+        container.dataset.tokens = JSON.stringify(data.words);
+        container.dataset.preprompt = preprompt;
+        const htmlString = generateFlowReadHTML(data.words, threshold, useGradient);
+        container.innerHTML = htmlString;
+        reFetchCount++;
+      } catch (err) {
+        console.error("Update error:", err);
+      }
+    } else {
+      // Just re-render visuals locally (super fast)
+      try {
+        const tokens = JSON.parse(container.dataset.tokens);
+        const htmlString = generateFlowReadHTML(tokens, threshold, useGradient);
+        container.innerHTML = htmlString;
+        rerenderCount++;
+      } catch (e) {
+        console.error("Error parsing tokens", e);
+      }
+    }
+  }
+
+  if (reFetchCount > 0) {
+    showToast(`Updated ${reFetchCount} blocks with new AI intent!`, 2000);
+  } else if (rerenderCount > 0) {
+    showToast(`Updated visuals for ${rerenderCount} blocks!`, 1500);
+  }
 }
 
 // Grouping logic extracted from your frontend code

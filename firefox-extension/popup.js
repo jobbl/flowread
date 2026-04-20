@@ -39,6 +39,13 @@ document.addEventListener('DOMContentLoaded', () => {
     browser.storage.local.set(settings).then(() => {
       saveBtn.textContent = 'Saved!';
       setTimeout(() => saveBtn.textContent = 'Save Settings', 1500);
+
+      // Notify the active tab to automatically recompute text
+      browser.tabs.query({active: true, currentWindow: true}, (tabs) => {
+        if (tabs[0]) {
+          browser.tabs.sendMessage(tabs[0].id, { action: "settings_updated", settings: settings });
+        }
+      });
     });
   });
 
