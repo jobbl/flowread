@@ -274,6 +274,12 @@ async def analyze_text(request: TextRequest):
 
     inputs = tokenizer(full_text, return_tensors="pt").to(device)
     
+    # Calculate how many tokens belong to the preprompt so we can strip them later
+    num_preprompt_tokens = 1 # default is 1 for <bos>
+    if preprompt:
+        p_toks = tokenizer(f"{preprompt}\n\n")["input_ids"]
+        num_preprompt_tokens = len(p_toks)
+
     with torch.no_grad():
         # Ensure we ask the model to output attentions explicitly
         outputs = model(**inputs, output_attentions=True)
@@ -301,13 +307,19 @@ async def analyze_text(request: TextRequest):
     # Calculate importance: sum of attention each token *receives* from the sequence
     importance = avg_attention.sum(dim=0).cpu().float().numpy()
     
-    if len(importance) > 1:
-        # Normalize to 0-1, optionally excluding the first token (<bos>) from max/min calculation
-        # as <bos> often has very high attention, skewing the rest
-        min_score = importance[1:].min()
-        max_score = importance[1:].max()
+    if len(importance) > num_preprompt_tokens:
+        # Normalize to 0-1, excluding the preprompt and <bos> from max/min calculation
+        # as they often have very high attention, skewing the rest
+        text_importance = importance[num_preprompt_tokens:]
+        min_score = text_importance.min()
+        max_score = text_importance.max()
         
-        normalized_scores = (importance - min_score) / (max_score - min_score)
+        # Avoid division by zero
+        if max_score > min_score:
+            normalized_scores = (importance - min_score) / (max_score - min_score)
+        else:
+            normalized_scores = importance - min_score
+            
         # Keep <bos> at max score
         normalized_scores[0] = 1.0
         normalized_scores = normalized_scores.clip(0, 1)
@@ -332,6 +344,10 @@ async def analyze_text(request: TextRequest):
             "score": float(normalized_scores[i])
         })
         
+    # Return only the <bos> token plus the actual text tokens
+    if num_preprompt_tokens > 1 and len(result) > num_preprompt_tokens:
+        result = [result[0]] + result[num_preprompt_tokens:]
+
     return {"words": result}
 
 if __name__ == "__main__":
