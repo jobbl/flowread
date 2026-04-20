@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>FlowRead Settings</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      width: 300px;
+      padding: 15px;
+      color: #292524;
+      background: #fdfbf7;
+      margin: 0;
+    }
+    h2 {
+      font-size: 1.25rem;
+      margin-top: 0;
+      margin-bottom: 15px;
+      color: #1c1917;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: #44403c;
+      font-size: 0.9rem;
+    }
+    input[type="range"] {
+      width: 100%;
+      margin-bottom: 15px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+      margin-bottom: 15px;
+      border: 1px solid #d6d3d1;
+      border-radius: 4px;
+      font-family: inherit;
+    }
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+    .checkbox-group input {
+      margin: 0;
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+    .checkbox-group label {
+      margin: 0;
+      cursor: pointer;
+    }
+    p.help {
+      font-size: 0.8rem;
+      color: #78716c;
+      margin-top: -10px;
+      margin-bottom: 15px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #292524;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #44403c;
+    }
+  </style>
+</head>
+<body>
+  <h2>FlowRead Settings</h2>
+  
+  <label for="threshold">Threshold: <span id="threshold-val">0.35</span></label>
+  <input type="range" id="threshold" min="0" max="1" step="0.01" value="0.35">
+
+  <div class="checkbox-group">
+    <input type="checkbox" id="gradient-mode">
+    <label for="gradient-mode">Gradient Mode</label>
+  </div>
+  <p class="help">Maps attention scores to visual contrast dynamically.</p>
+
+  <label for="preprompt">Intent-Driven Reading</label>
+  <input type="text" id="preprompt" placeholder="e.g., Focus on numbers and dates">
+  <p class="help">Instruct the AI what to focus on before generating saliency.</p>
+
+  <label for="api-url">Backend API URL</label>
+  <input type="text" id="api-url" placeholder="http://127.0.0.1:8000">
+  <p class="help">URL of your FlowRead backend (Local or Hugging Face).</p>
+
+  <button id="save-btn">Save Settings</button>
+
+  <script src="popup.js"></script>
+</body>
+</html>

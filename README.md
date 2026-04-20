@@ -36,7 +36,13 @@ We chose **Gemma 2B** because it offers an incredible balance of deep semantic u
 * **Frontend:** Pure HTML/JS/CSS with a minimalist, distraction-free "academic paper" aesthetic.
 * **Database:** SQLite for storing A/B test results.
 
-## How to Run Locally
+## How to Deploy and Run
+
+FlowRead AI can be run locally on your machine or deployed directly to Hugging Face Spaces.
+
+### Option 1: Run Locally (Recommended for Development)
+
+Running locally allows you to use your own GPU (like Apple Silicon MPS or Nvidia CUDA) for significantly faster processing.
 
 1. **Install Dependencies:**
    ```bash
@@ -48,11 +54,40 @@ We chose **Gemma 2B** because it offers an incredible balance of deep semantic u
    huggingface-cli login
    ```
 3. **Start the Server:**
+   You can start the FastAPI server using Uvicorn:
    ```bash
-   python main.py
+   uvicorn main:app --reload --host 0.0.0.0 --port 8000
    ```
 4. **Open the Web App:**
-   Navigate to `http://localhost:7860/static/index.html` in your browser.
+   Navigate to `http://localhost:8000` in your browser.
+
+### Option 2: Deploy to Hugging Face Spaces (Docker)
+
+This repository is already configured with a `Dockerfile` and the correct YAML frontmatter to be deployed directly as a Hugging Face Docker Space.
+
+1. Create a new **Docker Space** on Hugging Face.
+2. Add your Hugging Face Token as a Repository Secret named `HF_TOKEN`. This is required to download the gated Gemma 2B model.
+3. Push this repository to your Space.
+4. The Space will automatically build the Docker image and start the FastAPI server. The SQLite database (`study.db`) is safely written to the `/tmp` or `/data` directory to avoid read-only filesystem errors.
+
+## FlowRead Firefox Extension
+
+You can use FlowRead directly on any website using the included Firefox Extension! The extension communicates with your FlowRead backend (either Local or Hugging Face) to highlight text directly on the page.
+
+### How to Install the Extension:
+1. Locate the `flowread-extension.zip` file in this repository (or the `firefox-extension` folder).
+2. Open Firefox and navigate to `about:debugging`.
+3. Click **"This Firefox"** on the left sidebar.
+4. Click **"Load Temporary Add-on..."**.
+5. Select the `manifest.json` file inside the `firefox-extension` folder (or select the `.zip` file).
+
+### How to Configure and Use:
+1. **Set your Backend URL:** Click the FlowRead icon in your Firefox toolbar. In the settings popup, set the **Backend API URL**:
+   - If running locally: Enter `http://127.0.0.1:8000`
+   - If using Hugging Face: Enter your Space URL (e.g., `https://your-username-flowread.hf.space`)
+2. **Read:** Highlight any paragraph of text on any website.
+3. **FlowRead It:** Right-click the highlighted text and select **"FlowRead Highlight"**.
+4. The text on the page will dynamically transform using Gemma's attention vectors!
 
 ## The User Study (Help Us Prove It Works!)
-When you deploy this project to Hugging Face Spaces, users can take the built-in **2-Minute Study**. The system randomly assigns users to read plain text vs. FlowRead text, times their reading speed, and tests their comprehension. The global statistics dashboard proves the real-world impact of Gemma-powered saliency!
+The web application includes a built-in **3-Minute Study**. The system randomly assigns users to read plain text, FlowRead (bolding), or FlowRead (gradient) text. It times their reading speed, tests their comprehension, and asks for their preference. The global statistics dashboard proves the real-world impact of Gemma-powered saliency!
