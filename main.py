@@ -247,8 +247,8 @@ def load_model(model_name: str):
     print(f"Loading {model_name} on {device}...")
     try:
         if model_name == "27b-4a":
-            # Use Gemma 2 27B in 4-bit (requires CUDA)
-            hf_model_id = "google/gemma-2-27b"
+            # Use Gemma 4 27B in 4-bit (requires CUDA)
+            hf_model_id = "unsloth/gemma-4-27b"
             tokenizer = AutoTokenizer.from_pretrained(hf_model_id, token=hf_token)
             
             # BitsAndBytes for 4-bit quantization
@@ -267,7 +267,7 @@ def load_model(model_name: str):
             )
         else:
             # Default to 2b
-            hf_model_id = "google/gemma-2b"
+            hf_model_id = "unsloth/gemma-4-2b"
             tokenizer = AutoTokenizer.from_pretrained(hf_model_id, token=hf_token)
             model = AutoModelForCausalLM.from_pretrained(
                 hf_model_id,
