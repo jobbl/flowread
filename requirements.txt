@@ -1,7 +1,7 @@
 fastapi
 uvicorn
 torch
-transformers
+git+https://github.com/huggingface/transformers.git
 pydantic
 accelerate
 bitsandbytes
