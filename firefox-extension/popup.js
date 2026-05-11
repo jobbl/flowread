@@ -4,13 +4,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const gradientModeInput = document.getElementById('gradient-mode');
   const prepromptInput = document.getElementById('preprompt');
   const saliencyModeInput = document.getElementById('saliency-mode');
+  const layerPresetInput = document.getElementById('layer-preset');
   const modelVersionInput = document.getElementById('model-version');
   const apiUrlInput = document.getElementById('api-url');
   const saveBtn = document.getElementById('save-btn');
   const pageBtn = document.getElementById('page-btn');
 
   // Load existing settings
-  browser.storage.local.get(['threshold', 'gradientMode', 'preprompt', 'saliencyMode', 'modelVersion', 'apiUrl'], (res) => {
+  browser.storage.local.get(['threshold', 'gradientMode', 'preprompt', 'saliencyMode', 'layerPreset', 'modelVersion', 'apiUrl'], (res) => {
     if (res.threshold !== undefined) {
       thresholdInput.value = res.threshold;
       thresholdVal.textContent = parseFloat(res.threshold).toFixed(2);
@@ -23,6 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (res.saliencyMode !== undefined) {
       saliencyModeInput.value = res.saliencyMode;
+    }
+    if (res.layerPreset !== undefined) {
+      layerPresetInput.value = res.layerPreset;
     }
     if (res.modelVersion !== undefined) {
       modelVersionInput.value = res.modelVersion;
@@ -42,6 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
       gradientMode: gradientModeInput.checked,
       preprompt: prepromptInput.value.trim(),
       saliencyMode: saliencyModeInput.value,
+      layerPreset: layerPresetInput.value,
       modelVersion: modelVersionInput.value,
       apiUrl: apiUrlInput.value.trim().replace(/\/$/, '') // Remove trailing slash
     };

@@ -11,13 +11,13 @@ pinned: false
 
 **Accelerate reading comprehension using LLM attention vectors.**
 
-FlowRead AI is an accessibility and educational tool that dynamically bolds the most semantically important words in a text. It uses the raw, internal attention vectors of the **Google Gemma 2B** model to understand what words actually matter, creating a visually guided reading path that reduces cognitive load and improves reading comprehension.
+FlowRead AI is an accessibility and educational tool that dynamically bolds the most semantically important words in a text. It uses the raw, internal attention vectors of the **Gemma 4 (E2B and 26B)** models to understand what words actually matter, creating a visually guided reading path that reduces cognitive load and improves reading comprehension.
 
 ## The Problem
 In the digital age, information overload is a massive barrier. General readers experience reduced reading speeds and poor retention when trying to skim long articles or academic papers, and individuals with ADHD, dyslexia, or cognitive fatigue face even more significant challenges when processing dense blocks of text. Existing solutions (like "Bionic Reading") simply bold the first half of *every* word, which is arbitrary and ignores the actual meaning of the sentence. 
 
 ## The Solution
-FlowRead AI solves this by extracting the mathematical "saliency" of words. By averaging the incoming attention scores across different layers of Gemma 2B, we determine exactly which nouns, verbs, and adjectives anchor the semantic meaning of the sentence. 
+FlowRead AI solves this by extracting the mathematical "saliency" of words. By averaging the incoming attention scores across different layers of Gemma 4, we determine exactly which nouns, verbs, and adjectives anchor the semantic meaning of the sentence. 
 
 For the general reader, this translates to significantly faster reading speeds and highly efficient skimming, as the eye is naturally drawn to the most information-dense words. For readers with attention deficits or cognitive fatigue, it creates a visually guided reading path that reduces cognitive load and improves reading comprehension. Everyone benefits from a more focused reading experience.
 
@@ -28,11 +28,11 @@ For the general reader, this translates to significantly faster reading speeds a
 * **Built-in A/B User Study:** A complete embedded research tool with an SQLite backend to gather real-world empirical data on how FlowRead impacts average reading speed and comprehension accuracy.
 
 ## Why Gemma?
-We chose **Gemma 2B** because it offers an incredible balance of deep semantic understanding and computational efficiency. At just 2 billion parameters, its attention heads are remarkably accurate at capturing contextual importance, punching well above its weight class. Because it has open weights, we can directly extract the `outputs.attentions` matrices—something impossible with closed-source, API-based models. Its compact size means the entire application can run locally on consumer hardware (like Macs with MPS) or on free cloud tiers (like Hugging Face Spaces), democratizing access to this tool.
+We chose the **Gemma 4** family because they offer an incredible balance of deep semantic understanding and computational efficiency. Their attention heads are remarkably accurate at capturing contextual importance, punching well above their weight class. Because it has open weights, we can directly extract the `outputs.attentions` matrices—something impossible with closed-source, API-based models. With options like the highly efficient E2B model or the quantized 4-bit 26B model, the application can run locally on consumer hardware (like Macs with MPS) or on free cloud tiers (like Hugging Face Spaces), democratizing access to this tool.
 
 ## Technical Implementation
 * **Backend:** FastAPI (Python) serving a PyTorch/Hugging Face pipeline.
-* **Model:** `google/gemma-2b` running in `bfloat16` precision.
+* **Model:** `unsloth/gemma-4-E2B` (and 26B variants) running in `bfloat16` or 4-bit precision.
 * **Frontend:** Pure HTML/JS/CSS with a minimalist, distraction-free "academic paper" aesthetic.
 * **Database:** SQLite for storing A/B test results.
 
@@ -49,7 +49,7 @@ Running locally allows you to use your own GPU (like Apple Silicon MPS or Nvidia
    pip install -r requirements.txt
    ```
 2. **Authenticate with Hugging Face:**
-   Gemma 2B is a gated model. You must accept the terms on Hugging Face and log in:
+   Gemma models are generally gated. You must accept the terms on Hugging Face and log in:
    ```bash
    huggingface-cli login
    ```
@@ -66,7 +66,7 @@ Running locally allows you to use your own GPU (like Apple Silicon MPS or Nvidia
 This repository is already configured with a `Dockerfile` and the correct YAML frontmatter to be deployed directly as a Hugging Face Docker Space.
 
 1. Create a new **Docker Space** on Hugging Face.
-2. Add your Hugging Face Token as a Repository Secret named `HF_TOKEN`. This is required to download the gated Gemma 2B model.
+2. Add your Hugging Face Token as a Repository Secret named `HF_TOKEN`. This is required to download the gated Gemma models.
 3. Push this repository to your Space.
 4. The Space will automatically build the Docker image and start the FastAPI server. The SQLite database (`study.db`) is safely written to the `/tmp` or `/data` directory to avoid read-only filesystem errors.
 
